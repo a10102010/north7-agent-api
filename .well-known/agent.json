@@ -1,0 +1,143 @@
+{
+  "name": "NORTH7 Market Intelligence",
+  "description": "Financial intelligence infrastructure for AI agents. Provides AI-analyzed trading signals, risk assessment, market regime detection, and decision intelligence for 80+ global assets. Unlike raw data APIs, NORTH7 delivers decision-ready signals with confidence scores and reasoning.",
+  "url": "https://north7.ai",
+  "version": "1.0.0",
+  "provider": {
+    "organization": "NORTH7",
+    "url": "https://north7.ai"
+  },
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "authentication": {
+    "schemes": ["ApiKey"],
+    "header": "X-API-Key",
+    "free_endpoints": ["/v1/risk", "/v1/regime", "/v1/health"]
+  },
+  "defaultInputModes": ["application/json"],
+  "defaultOutputModes": ["application/json"],
+  "skills": [
+    {
+      "id": "market-risk-assessment",
+      "name": "Assess Market Risk",
+      "description": "Get the global market risk index (0-100) with active crises and regional breakdown. No API key needed.",
+      "tags": ["risk", "market", "geopolitics", "free"],
+      "examples": [
+        "What is the current market risk level?",
+        "Are there any active crises affecting markets?",
+        "Is it safe to trade right now?"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "market-regime-detection",
+      "name": "Detect Market Regime",
+      "description": "Determine if the market is in BULL, BEAR, SIDEWAYS, or CRISIS mode based on S&P 500 and VIX. No API key needed.",
+      "tags": ["regime", "market", "trend", "free"],
+      "examples": [
+        "Is the market bullish or bearish?",
+        "What is the current market trend?",
+        "Should I go long or short?"
+      ],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "trading-signals",
+      "name": "Get Trading Signals",
+      "description": "Real-time AI-analyzed trading signals from 6 sources: news, alpha screening, stock radar, intraday scanner, commodity scoring. Each signal has direction, confidence score, and reasoning.",
+      "tags": ["signals", "trading", "stocks", "commodities", "ai"],
+      "examples": [
+        "What are the latest trading signals?",
+        "Any buy signals for tech stocks?",
+        "What does the AI recommend trading today?"
+      ]
+    },
+    {
+      "id": "asset-prices",
+      "name": "Get Real-Time Prices",
+      "description": "Live prices for 80+ assets including stocks, ETFs, commodities, and forex. Updated every 2 minutes.",
+      "tags": ["prices", "stocks", "forex", "commodities", "real-time"],
+      "examples": [
+        "What is the current price of AAPL?",
+        "Show me gold and oil prices",
+        "Get prices for MSFT, TSLA, AMZN"
+      ]
+    },
+    {
+      "id": "stock-analysis",
+      "name": "Analyze Stock",
+      "description": "Deep AI analysis of a specific stock with fundamentals, technicals, and AI assessment.",
+      "tags": ["analysis", "fundamentals", "technicals", "stocks"],
+      "examples": [
+        "Analyze Tesla stock",
+        "What are the fundamentals of MSFT?",
+        "Should I buy Apple?"
+      ]
+    },
+    {
+      "id": "intelligence-briefing",
+      "name": "Daily Intelligence Briefing",
+      "description": "AI-generated daily briefing covering geopolitics, market-moving events, and forward-looking analysis. Available in English and German.",
+      "tags": ["intelligence", "geopolitics", "briefing", "daily"],
+      "examples": [
+        "Give me today's market briefing",
+        "What geopolitical events are affecting markets?",
+        "Daily intelligence report"
+      ]
+    },
+    {
+      "id": "commodity-signals",
+      "name": "Commodity Analysis",
+      "description": "AI scoring for 15 raw materials (gold, oil, wheat, coffee etc.) with seasonal patterns.",
+      "tags": ["commodities", "gold", "oil", "agriculture"],
+      "examples": [
+        "What are the commodity signals?",
+        "Is gold a buy right now?",
+        "Coffee and cocoa analysis"
+      ]
+    },
+    {
+      "id": "sector-rotation",
+      "name": "Sector Radar",
+      "description": "Sector rotation analysis showing which sectors lead or lag the market.",
+      "tags": ["sectors", "rotation", "breadth", "momentum"],
+      "examples": [
+        "Which sectors are outperforming?",
+        "Show me sector rotation data",
+        "Best performing sectors right now"
+      ]
+    },
+    {
+      "id": "model-portfolio",
+      "name": "Model Portfolio",
+      "description": "Current positions and performance of the NORTH7 AI model portfolio.",
+      "tags": ["portfolio", "positions", "performance"],
+      "examples": [
+        "What is the model portfolio holding?",
+        "Show me the AI portfolio performance"
+      ]
+    }
+  ],
+  "api": {
+    "openapi": "https://north7.ai/v1/openapi.json",
+    "docs": "https://north7.ai/v1/docs",
+    "health": "https://north7.ai/v1/health"
+  },
+  "mcp": {
+    "url": "https://north7.ai/mcp",
+    "transport": "streamable-http",
+    "tools": 9
+  },
+  "pricing": {
+    "model": "credits",
+    "free_tier": true,
+    "free_credits": 1000,
+    "currency": "EUR",
+    "note": "3 endpoints completely free without API key"
+  },
+  "developer_page": "https://north7.ai/developers"
+}

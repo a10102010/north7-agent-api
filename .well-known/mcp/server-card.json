@@ -1,0 +1,13 @@
+{
+  "name": "north7-market-intelligence",
+  "description": "AI-powered financial intelligence for autonomous trading agents. Real-time market signals, risk assessment, regime detection, stock analysis, commodity scoring, sector radar, and geopolitical intelligence briefings.",
+  "url": "https://north7.ai/mcp",
+  "transport": "streamable-http",
+  "version": "1.0.0",
+  "tools": 9,
+  "author": "NORTH7",
+  "homepage": "https://north7.ai/developers",
+  "repository": "https://github.com/a10102010/north7",
+  "categories": ["finance", "trading", "market-data", "geopolitics", "risk-analysis"],
+  "tags": ["trading", "stocks", "commodities", "forex", "risk", "geopolitics", "signals", "ai", "market-intelligence"]
+}

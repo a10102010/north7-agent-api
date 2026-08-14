@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.env
+.env
+config.env
+data/
+*.db
+*.log
+venv/
+.venv/

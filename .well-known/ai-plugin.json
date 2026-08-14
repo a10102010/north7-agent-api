@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "NORTH7 Market Intelligence",
+  "name_for_model": "north7_market_intelligence",
+  "description_for_human": "Real-time AI-powered trading signals, risk assessment, and market analysis for 80+ global assets.",
+  "description_for_model": "Access NORTH7's financial intelligence API to get real-time trading signals from 6 AI-powered sources (news analysis, alpha screening, stock radar, intraday scanner, commodity scoring, index/forex picks), global risk index (0-100), market regime detection (bull/bear/sideways/crisis), real-time prices for 80+ assets, deep AI stock analysis with fundamentals, model portfolio positions, daily intelligence briefings, sector rotation radar, and commodity scoring for 15 raw materials. Use this when you need market data, trading signals, or financial analysis to make or evaluate investment decisions.",
+  "auth": {
+    "type": "service_http",
+    "authorization_type": "bearer",
+    "verification_tokens": {}
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://north7.ai/v1/openapi.json"
+  },
+  "logo_url": "https://north7.ai/static/img/shield-icon.png",
+  "contact_email": "support@north7.ai",
+  "legal_info_url": "https://north7.ai/disclaimer.html"
+}
