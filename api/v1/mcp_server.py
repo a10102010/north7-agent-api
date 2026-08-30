@@ -60,16 +60,24 @@ TOOLS = [
     types.Tool(
         name="get_trading_signals",
         description=(
-            "Get real-time trading signals from 6 AI-powered sources: "
-            "news analysis (5min), alpha screening (daily), stock radar, "
-            "intraday scanner (30min), commodity scoring, index/forex picks."
+            "Retrieve AI-generated trading signals from 6 independent sources. "
+            "Use this tool when you need actionable trade ideas with direction (LONG/SHORT), "
+            "confidence scores (0-100), and AI-generated reasoning. "
+            "Sources: news_5m (breaking news analysis, updated every 5 min), "
+            "alpha_14d (daily highest-conviction stock picks), "
+            "radar_daily (technical stock radar), "
+            "intraday_30m (momentum scanner, updated every 30 min during market hours), "
+            "scr_daily (commodity signals for 15 raw materials). "
+            "Returns a list of signal objects each containing: symbol, type, direction, confidence, and reason. "
+            "Call get_risk_index and get_market_regime first to assess conditions before acting on signals. "
+            "Costs 1 credit per call. FREE endpoints (risk, regime) require no API key."
         ),
         inputSchema={
             "type": "object",
             "properties": {
                 "source": {
                     "type": "string",
-                    "description": "Filter: news_5m, alpha_14d, radar_daily, intraday_30m, scr_daily. Omit for all.",
+                    "description": "Filter signals by source type. Options: news_5m (breaking news, 5-min updates), alpha_14d (daily conviction picks), radar_daily (technical radar), intraday_30m (momentum scanner), scr_daily (commodity signals). Omit to receive signals from all sources combined.",
                     "enum": ["news_5m", "alpha_14d", "radar_daily", "intraday_30m", "scr_daily"],
                 }
             },
@@ -77,61 +85,142 @@ TOOLS = [
     ),
     types.Tool(
         name="get_risk_index",
-        description="Global market risk index (0-100). Includes crises, regional scores. Higher = more risk.",
+        description=(
+            "Get the global market risk index scored 0-100. "
+            "Use this tool FIRST before any trading decision to assess whether market conditions are favorable. "
+            "Score interpretation: 0-30 = CALM (low risk, favorable for trading), "
+            "30-50 = MODERATE (normal conditions), "
+            "50-70 = ELEVATED (increased caution advised), "
+            "70-100 = CRITICAL (crisis-level, defensive positioning recommended). "
+            "Returns: value (0-100), status (CALM/MODERATE/ELEVATED/CRITICAL), "
+            "active crises list, and per-region risk scores (Middle East, Europe, Asia, Americas). "
+            "Data sources: GDELT geopolitical events, VIX, credit spreads, macro indicators. "
+            "Updated every 30 minutes. FREE — no API key required."
+        ),
         inputSchema={"type": "object", "properties": {}},
     ),
     types.Tool(
         name="get_market_regime",
-        description="Detect market regime: BULL, BEAR, SIDEWAYS, or CRISIS. Based on SPX vs 200d MA and VIX.",
+        description=(
+            "Detect the current market regime to inform trading strategy. "
+            "Use this tool alongside get_risk_index before making trading decisions. "
+            "Returns one of four regimes: BULL (S&P 500 above 200-day MA, VIX below 20), "
+            "BEAR (S&P 500 below 200-day MA), "
+            "SIDEWAYS (range-bound, low directional conviction), "
+            "CRISIS (extreme volatility, VIX above 30). "
+            "Also returns: confidence percentage, S&P 500 price vs 200-day MA, "
+            "current VIX level, and regime duration. "
+            "Updated every 30 minutes. FREE — no API key required."
+        ),
         inputSchema={"type": "object", "properties": {}},
     ),
     types.Tool(
         name="get_prices",
-        description="Real-time prices for 80+ assets (stocks, ETFs, commodities, forex). Updated every 2 min.",
+        description=(
+            "Fetch real-time price data for 80+ assets across stocks, ETFs, commodities, and forex. "
+            "Use this tool when you need current market prices, daily price changes, or percentage moves. "
+            "Returns for each asset: symbol, price, change (absolute), changePercent, volume, and timestamp. "
+            "Prices are sourced from Yahoo Finance and updated every 2 minutes during market hours. "
+            "You can request specific symbols or omit the parameter to receive all 80+ assets. "
+            "Costs 1 credit per call."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
                 "symbols": {
                     "type": "string",
-                    "description": "Comma-separated symbols e.g. 'AAPL,MSFT,TSLA'. Omit for all.",
+                    "description": "Comma-separated ticker symbols to filter results, e.g. 'AAPL,MSFT,TSLA,GC=F,EURUSD=X'. Use standard Yahoo Finance ticker format. Omit this parameter to receive prices for all 80+ tracked assets.",
                 }
             },
         },
     ),
     types.Tool(
         name="get_stock_analysis",
-        description="Deep AI analysis for a stock: fundamentals, technicals, AI assessment.",
+        description=(
+            "Get a comprehensive AI-generated analysis for a specific stock. "
+            "Use this tool when you need detailed information about a company before making an investment decision. "
+            "Returns: fundamental data (P/E, revenue, margins, market cap), "
+            "technical indicators (RSI, moving averages, support/resistance), "
+            "AI assessment with bull/bear case, rating (BUY/HOLD/SELL), "
+            "and a confidence score. "
+            "Analysis is generated using Claude AI and covers both quantitative metrics and qualitative factors. "
+            "Costs 5 credits per call. The ticker parameter is required."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "ticker": {"type": "string", "description": "Ticker symbol e.g. AAPL, MSFT, TSLA"}
+                "ticker": {
+                    "type": "string",
+                    "description": "Stock ticker symbol in uppercase, e.g. 'AAPL' for Apple, 'MSFT' for Microsoft, 'TSLA' for Tesla, 'NVDA' for NVIDIA. Use standard US ticker format."
+                }
             },
             "required": ["ticker"],
         },
     ),
     types.Tool(
         name="get_intelligence_briefing",
-        description="AI-generated daily intelligence briefing. Geopolitics, market-moving events, analysis.",
+        description=(
+            "Retrieve the daily AI-generated geopolitical intelligence briefing. "
+            "Use this tool to understand macro-level events that could impact markets: "
+            "geopolitical developments, central bank decisions, trade policy changes, "
+            "sanctions, military conflicts, and economic data releases. "
+            "Returns: headline events with market impact scores (1-10), "
+            "affected sectors and assets, risk assessment, and actionable implications. "
+            "The briefing is generated daily using Claude AI analyzing 40+ global news sources. "
+            "Available in English and German. Costs 10 credits per call."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "lang": {"type": "string", "description": "en or de", "enum": ["en", "de"], "default": "en"}
+                "lang": {
+                    "type": "string",
+                    "description": "Language for the briefing. 'en' for English (default), 'de' for German (Deutsch).",
+                    "enum": ["en", "de"],
+                    "default": "en"
+                }
             },
         },
     ),
     types.Tool(
         name="get_commodity_signals",
-        description="Commodity scoring for 15 raw materials (gold, oil, wheat, coffee etc.) with seasonal patterns.",
+        description=(
+            "Get AI-scored trading signals for 15 raw material commodities. "
+            "Use this tool for commodity-specific intelligence including: "
+            "gold, silver, crude oil, natural gas, wheat, corn, soybeans, coffee, cocoa, sugar, "
+            "cotton, copper, platinum, palladium, and lumber. "
+            "Returns for each commodity: current score (0-100), direction (LONG/SHORT), "
+            "seasonal pattern analysis, supply chain risk factors, and AI reasoning. "
+            "Particularly useful for supply chain risk assessment and commodity trading decisions. "
+            "Costs 2 credits per call."
+        ),
         inputSchema={"type": "object", "properties": {}},
     ),
     types.Tool(
         name="get_sector_radar",
-        description="Sector rotation radar: breadth and momentum across market sectors.",
+        description=(
+            "Analyze sector rotation and market breadth across major market sectors. "
+            "Use this tool to identify which sectors are gaining or losing momentum, "
+            "helping with sector allocation and rotation strategies. "
+            "Returns: top-performing and worst-performing sectors, "
+            "breadth indicators (advance/decline ratio), momentum scores, "
+            "and sector-level technical analysis. "
+            "Covers: Technology, Healthcare, Financials, Energy, Consumer, Industrials, "
+            "Materials, Utilities, Real Estate, and Communication Services. "
+            "Costs 2 credits per call."
+        ),
         inputSchema={"type": "object", "properties": {}},
     ),
     types.Tool(
         name="get_model_portfolio",
-        description="Current model portfolio positions and performance.",
+        description=(
+            "View the current NORTH7 model portfolio positions and performance metrics. "
+            "Use this tool to see what positions the NORTH7 system is currently holding, "
+            "including entry prices, current P&L, position sizes, and overall portfolio performance. "
+            "Returns: list of active positions (symbol, direction, entry price, current price, P&L percentage), "
+            "total portfolio return, and performance history. "
+            "The model portfolio is a transparent, logged research portfolio — not investment advice. "
+            "Costs 10 credits per call."
+        ),
         inputSchema={"type": "object", "properties": {}},
     ),
 ]
