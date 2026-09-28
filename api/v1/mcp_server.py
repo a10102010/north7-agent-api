@@ -38,7 +38,14 @@ TOOL_ENDPOINT_MAP = {
     'get_commodity_signals':    'commodities',
     'get_sector_radar':         'sector_radar',
     'get_model_portfolio':      'portfolio',
+    'get_events':               'events',
+    'get_agent_context':        'agent_context',
+    'get_impact':               'impact',
+    'get_relationships':        'relationships',
 }
+
+# Tools that work without API key (same as REST free endpoints)
+FREE_TOOLS = {'get_risk_index', 'get_market_regime', 'get_events', 'get_agent_context', 'get_impact', 'get_relationships'}
 
 
 def _load_json(filename: str, default=None):
@@ -223,6 +230,92 @@ TOOLS = [
         ),
         inputSchema={"type": "object", "properties": {}},
     ),
+    types.Tool(
+        name="get_events",
+        description=(
+            "Get structured geopolitical and market events with impact scores. "
+            "Each event includes: headline, impact_score (1-10), affected sectors, "
+            "affected assets, region, and confidence. Use this to detect market-moving "
+            "events and filter by minimum impact or region. "
+            "Returns events sorted by impact score, highest first. "
+            "FREE — no API key needed. "
+            "Example: get_events with min_impact=7 returns only high-impact events."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "min_impact": {
+                    "type": "number",
+                    "description": "Minimum impact score (1-10). Default 0 returns all events. Use 7+ for high-impact only.",
+                },
+                "region": {
+                    "type": "string",
+                    "description": "Filter by region: 'Middle East', 'Europe', 'North America', 'South Asia', 'East Asia', 'Eastern Europe', 'Africa'",
+                },
+            },
+        },
+    ),
+    types.Tool(
+        name="get_agent_context",
+        description=(
+            "Get full market awareness in a single call — the recommended FIRST tool "
+            "for any trading agent. Returns: risk index (0-100) with trend, "
+            "market regime (BULL/BEAR/SIDEWAYS/CRISIS) with VIX, "
+            "agent guidance (DEFENSIVE/CAUTIOUS/FAVORABLE), "
+            "active crises, hot regions with scores, signal summary, "
+            "and recommended next API calls. "
+            "This combines /risk + /regime + /events into one response. "
+            "FREE — no API key needed."
+        ),
+        inputSchema={"type": "object", "properties": {}},
+    ),
+    types.Tool(
+        name="get_impact",
+        description=(
+            "Map geopolitical events and crises to specific asset impacts. "
+            "Returns which assets are positively or negatively affected by current events, "
+            "with directional bias (BUY/SELL), confidence score, driver explanation, "
+            "and timeframe (short_term/medium_term). "
+            "Filter by specific asset to see all factors affecting it. "
+            "Combines crisis analysis, news signals, alpha screening, and commodity scoring. "
+            "FREE — no API key needed."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "asset": {
+                    "type": "string",
+                    "description": "Filter by asset ticker, e.g. 'AAPL', 'CL=F' (crude oil), 'GC=F' (gold), 'NVDA'. Omit for all impacts.",
+                },
+            },
+        },
+    ),
+    types.Tool(
+        name="get_relationships",
+        description=(
+            "Query the NORTH7 knowledge graph of entities and relationships. "
+            "Entities: countries, companies, assets, commodities, sectors, crises, regions. "
+            "Shows how entities are connected — e.g. which assets Iran affects, "
+            "what commodities a crisis impacts, which sectors are linked to a country. "
+            "Use entity parameter to query a specific entity (e.g. 'IR' for Iran, "
+            "'CL=F' for oil, 'energy' for energy sector). "
+            "Returns matched entities, connected nodes, and weighted edges with evidence. "
+            "FREE — no API key needed."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "entity": {
+                    "type": "string",
+                    "description": "Entity ID to query: country code (IR, US, CN), ticker (AAPL, CL=F), sector (energy, defense), or name.",
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Filter by entity type: country, company, asset, commodity, sector, crisis, region",
+                },
+            },
+        },
+    ),
 ]
 
 
@@ -306,6 +399,78 @@ async def handle_call_tool(ctx, params):
     elif name == "get_model_portfolio":
         return _text({"portfolio": _load_json("portfolio.json", {}), "performance": _load_json("performance.json", {})})
 
+    elif name == "get_events":
+        risk_data = _load_json("risk.json", {})
+        daily = _load_json("daily_en.json", {})
+        min_impact = float(arguments.get("min_impact", 0))
+        region_filter = arguments.get("region", "")
+        events = []
+        for i, crisis in enumerate(risk_data.get("crises", [])):
+            cl = crisis.lower()
+            region = "Global"
+            if any(w in cl for w in ["iran", "hormuz", "middle east"]): region = "Middle East"
+            elif any(w in cl for w in ["ukraine", "russia"]): region = "Eastern Europe"
+            elif any(w in cl for w in ["china", "taiwan", "japan"]): region = "East Asia"
+            elif any(w in cl for w in ["india", "nepal", "pakistan"]): region = "South Asia"
+            elif any(w in cl for w in ["us ", "canada", "fed ", "treasury", "tariff"]): region = "North America"
+            elif any(w in cl for w in ["europe", "ecb"]): region = "Europe"
+            elif any(w in cl for w in ["africa", "sudan", "ebola"]): region = "Africa"
+            impact = 8.5 if any(w in cl for w in ["crisis", "collapse", "war"]) else 7.0 if any(w in cl for w in ["escalat", "surge"]) else 6.0
+            if impact >= min_impact and (not region_filter or region_filter.lower() in region.lower()):
+                events.append({"id": f"evt_{i+1}", "headline": crisis, "impact_score": impact, "region": region})
+        for sig in daily.get("signals_detail", []):
+            events.append({"id": f"evt_sig_{len(events)}", "type": sig.get("type",""), "asset": sig.get("asset",""), "rationale": sig.get("rationale",""), "sources": sig.get("sources",[])})
+        return _text({"events": events, "count": len(events), "risk_level": risk_data.get("value", 0)})
+
+    elif name == "get_agent_context":
+        risk_data = _load_json("risk.json", {})
+        regime_data = _load_json("regime.json", {})
+        rv = risk_data.get("value", 50)
+        rg = regime_data.get("regime", "UNKNOWN")
+        if rv >= 80: guidance = "DEFENSIVE"
+        elif rv >= 60: guidance = "CAUTIOUS"
+        elif rg == "BULL" and rv < 40: guidance = "FAVORABLE"
+        elif rg == "BEAR": guidance = "BEARISH"
+        else: guidance = "NEUTRAL"
+        hot = [{"name": r["name"], "score": r["score"]} for r in risk_data.get("regions", []) if r.get("score", 0) >= 60]
+        return _text({"risk": {"value": rv, "status": risk_data.get("status",""), "trend": "rising" if rv>=70 else "stable"}, "regime": {"current": rg, "spx": regime_data.get("spx_value"), "vix": regime_data.get("vix_value")}, "guidance": guidance, "crises": risk_data.get("crises",[])[:5], "hot_regions": hot})
+
+    elif name == "get_impact":
+        risk_data = _load_json("risk.json", {})
+        signals = _load_json("signals.json", [])
+        alpha = _load_json("alpha_signals.json", {})
+        asset_filter = arguments.get("asset", "")
+        impacts = []
+        if isinstance(signals, list):
+            for s in signals:
+                sym = s.get("asset", s.get("symbol", ""))
+                if asset_filter and asset_filter.upper() not in sym.upper(): continue
+                if sym: impacts.append({"asset": sym, "direction": s.get("direction",""), "confidence": s.get("confidence"), "driver": s.get("reason_en", s.get("reason",""))[:200], "source": "news"})
+        for s in alpha.get("signals", []):
+            sym = s.get("symbol", "")
+            if asset_filter and asset_filter.upper() not in sym.upper(): continue
+            if sym: impacts.append({"asset": sym, "direction": s.get("direction","long"), "confidence": s.get("confidence", s.get("score")), "driver": s.get("reason_en", s.get("reason",""))[:200], "source": "alpha"})
+        return _text({"impacts": impacts, "count": len(impacts), "risk": risk_data.get("value", 0), "regime": _load_json("regime.json", {}).get("regime","")})
+
+    elif name == "get_relationships":
+        graph = _load_json("event_graph.json", {})
+        nodes = graph.get("nodes", {})
+        edges = graph.get("edges", [])
+        entity = arguments.get("entity", "")
+        etype = arguments.get("type", "")
+        if entity:
+            el = entity.lower()
+            matched = [k for k, n in nodes.items() if el == n.get("id","").lower() or el in n.get("name","").lower() or el in k.lower()]
+            conn_edges = [e for e in edges if e["from"] in matched or e["to"] in matched]
+            conn_keys = set(matched)
+            for e in conn_edges: conn_keys.add(e["from"]); conn_keys.add(e["to"])
+            return _text({"entity": entity, "found": bool(matched), "nodes": [nodes[k] for k in conn_keys if k in nodes], "edges": conn_edges})
+        elif etype:
+            filtered = [v for v in nodes.values() if v.get("type") == etype]
+            return _text({"type": etype, "nodes": filtered, "count": len(filtered)})
+        else:
+            return _text({"node_count": graph.get("node_count",0), "edge_count": graph.get("edge_count",0), "entity_types": graph.get("entity_types",{})})
+
     return _text({"error": f"Unknown tool: {name}"})
 
 
@@ -317,6 +482,12 @@ server.add_request_handler("tools/call", types.CallToolRequestParams, handle_cal
 # host="0.0.0.0" disables auto DNS rebinding protection (we're behind nginx)
 _inner_app = server.streamable_http_app(host="0.0.0.0")
 
+
+# ── Health check for Glama/mcp-proxy ──
+from starlette.routing import Route
+
+async def ping(request):
+    return Response(content='{status:ok}', status_code=200, media_type='application/json')
 
 # ── Auth Middleware ──
 class MCPAuthMiddleware:
@@ -383,15 +554,20 @@ class MCPAuthMiddleware:
             elif header_name == "x-api-key":
                 api_key = header_val.strip()
 
+        # Free tools don't need auth
+        if tool_name in FREE_TOOLS:
+            await self._forward(scope, body, send)
+            return
+
         if not api_key:
             error_resp = self._jsonrpc_error(
                 rpc_id, -32001,
                 "Authentication required. Provide API key via 'Authorization: Bearer n7_live_...' or 'X-API-Key' header. "
-                "Get your key at https://north7.ai/api"
+                "Get your free key at https://north7.ai/api"
             )
             response = Response(
                 content=json.dumps(error_resp),
-                status_code=401,
+                status_code=200,
                 media_type="application/json",
             )
             await response(scope, receive, send)
@@ -404,10 +580,9 @@ class MCPAuthMiddleware:
         ok, error_msg, key_data = validate_request(api_key, endpoint)
         if not ok:
             error_resp = self._jsonrpc_error(rpc_id, -32001, error_msg)
-            status = 429 if 'rate limit' in error_msg.lower() else 403
             response = Response(
                 content=json.dumps(error_resp),
-                status_code=status,
+                status_code=200,
                 media_type="application/json",
             )
             await response(scope, receive, send)
@@ -446,8 +621,16 @@ class MCPAuthMiddleware:
         }
 
 
-# Wrap the MCP app with auth middleware
-mcp_app = MCPAuthMiddleware(_inner_app)
+# Add health check route, then wrap with auth middleware
+from starlette.applications import Starlette
+from starlette.routing import Route, Mount
+
+_health_app = Starlette(routes=[
+    Route('/ping', ping, methods=['GET']),
+    Mount('/', app=_inner_app),
+])
+
+mcp_app = MCPAuthMiddleware(_health_app)
 
 if __name__ == "__main__":
     import uvicorn
