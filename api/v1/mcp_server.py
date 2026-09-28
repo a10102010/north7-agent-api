@@ -506,6 +506,17 @@ class MCPAuthMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # Health check for Glama/mcp-proxy
+        request = Request(scope, receive)
+        if request.method == "GET" and request.url.path.rstrip('/') in ('/ping', '/mcp/ping'):
+            response = Response(
+                content='{"status":"ok"}',
+                status_code=200,
+                media_type='application/json',
+            )
+            await response(scope, receive, send)
+            return
+
         # We need to inspect POST body to check if it's a tools/call request.
         # Read the body, check the JSON-RPC method, then replay it to the inner app.
         request = Request(scope, receive)
@@ -621,16 +632,8 @@ class MCPAuthMiddleware:
         }
 
 
-# Add health check route, then wrap with auth middleware
-from starlette.applications import Starlette
-from starlette.routing import Route, Mount
-
-_health_app = Starlette(routes=[
-    Route('/ping', ping, methods=['GET']),
-    Mount('/', app=_inner_app),
-])
-
-mcp_app = MCPAuthMiddleware(_health_app)
+# Wrap the MCP app with auth middleware
+mcp_app = MCPAuthMiddleware(_inner_app)
 
 if __name__ == "__main__":
     import uvicorn
