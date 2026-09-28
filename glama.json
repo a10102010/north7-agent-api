@@ -1,0 +1,28 @@
+{
+  "name": "north7-market-intelligence",
+  "description": "AI-powered financial intelligence for trading agents. Real-time signals, risk assessment, commodity scoring, and geopolitical analysis from 70+ sources. 6 free tools, no signup needed.",
+  "category": [
+    "Finance",
+    "Autonomous Agents"
+  ],
+  "author": "a10102010",
+  "website": "https://north7.ai",
+  "documentation": "https://north7.ai/developers",
+  "license": "MIT",
+  "transport": "streamable-http",
+  "url": "https://north7.ai/mcp",
+  "tools": 13,
+  "free_tools": [
+    "get_risk_index",
+    "get_market_regime",
+    "get_events",
+    "get_agent_context",
+    "get_impact",
+    "get_relationships"
+  ],
+  "pricing": {
+    "free_tools": 6,
+    "paid_tools": 7,
+    "currency": "credits"
+  }
+}
